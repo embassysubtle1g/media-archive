@@ -94,7 +94,7 @@
     google.accounts.id.renderButton(signInContainer, {
       type: "standard",
       theme: "outline",
-      size: "large",
+      size: "medium",
       text: "signin_with",
       shape: "pill",
       locale: "zh-TW"
