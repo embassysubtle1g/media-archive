@@ -3,6 +3,8 @@
 (function () {
   let idToken = null;
   let signedInUser = null;
+  const SESSION_TOKEN_KEY = "mediaArchiveGoogleIdToken";
+  let restoredSession = false;
 
   const signInContainer = document.getElementById("googleSignInButton");
   const signedInArea = document.getElementById("signedInArea");
@@ -47,10 +49,17 @@
     idToken = response.credential;
     const payload = decodeJwtPayload(idToken);
 
-    if (!payload) {
+    if (!payload || !payload.exp || Number(payload.exp) <= Math.floor(Date.now() / 1000)) {
       idToken = null;
-      alert("無法讀取 Google 帳號資訊，請重新登入。");
+      alert("Google 登入憑證無效或已過期，請重新登入。");
       return;
+    }
+
+    // 僅保存在目前分頁的工作階段；關閉分頁後會清除。
+    try {
+      sessionStorage.setItem(SESSION_TOKEN_KEY, idToken);
+    } catch (error) {
+      console.warn("無法保存本分頁登入狀態：", error);
     }
 
     // 這裡的資料只用來顯示帳號；不可拿來作為收藏 API 的授權依據。
@@ -91,9 +100,10 @@
       locale: "zh-TW"
     });
 
-    // 若使用者先前已授權且 Google 帳戶仍有效，嘗試自動恢復登入。
-    // Google 可能因瀏覽器隱私設定或帳戶狀態而不提供自動登入。
-    google.accounts.id.prompt();
+    // 若本分頁已恢復有效工作階段，就不再額外彈出 Google 登入提示。
+    if (!restoredSession) {
+      google.accounts.id.prompt();
+    }
   }
 
   function loadGoogleIdentityServices() {
@@ -111,6 +121,12 @@
   signOutButton.addEventListener("click", function () {
     idToken = null;
     signedInUser = null;
+    restoredSession = false;
+    try {
+      sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    } catch (error) {
+      console.warn("無法清除本分頁登入狀態：", error);
+    }
 
     if (window.google && google.accounts && google.accounts.id) {
       google.accounts.id.disableAutoSelect();
@@ -119,7 +135,33 @@
     updateAccountUI();
   });
 
-  // 提供給後續收藏功能使用；Token 不存入 localStorage。
+  // 嘗試恢復目前分頁的登入狀態。Token 有效期限由 Google 的 exp 欄位判斷，
+  // 真正的 Token 驗證仍由 Apps Script 伺服器端負責。
+  try {
+    const savedToken = sessionStorage.getItem(SESSION_TOKEN_KEY);
+    if (savedToken) {
+      const payload = decodeJwtPayload(savedToken);
+      if (payload && Number(payload.exp) > Math.floor(Date.now() / 1000)) {
+        idToken = savedToken;
+        signedInUser = {
+          name: payload.name || "",
+          email: payload.email || "",
+          picture: payload.picture || ""
+        };
+        restoredSession = true;
+      } else {
+        sessionStorage.removeItem(SESSION_TOKEN_KEY);
+      }
+    }
+  } catch (error) {
+    console.warn("無法恢復本分頁登入狀態：", error);
+  }
+
+  // defer 載入的 app.js 會先註冊事件監聽，再於 DOMContentLoaded 時收到恢復結果。
+  if (restoredSession) {
+    document.addEventListener("DOMContentLoaded", updateAccountUI, { once: true });
+  }
+
   window.MediaArchiveAuth = {
     getIdToken: () => idToken,
     getUser: () => signedInUser,
