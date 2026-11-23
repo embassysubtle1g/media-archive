@@ -192,8 +192,11 @@ async function init() {
 
   loading.style.display = "none";
 
-  // 其他資料在背景載入，不影響首頁顯示及人物點擊。
+  // 首頁需要清單、作品與人物關聯資料，載入後再整理首頁內容。
   relatedDataPromise = loadRelatedData();
+  await relatedDataPromise;
+  renderHome();
+  loading.style.display = "none";
 }
 
 async function loadRelatedData() {
@@ -234,14 +237,48 @@ function getPersonImagePath(imageURL) {
   }
 }
 
-function renderPeople(items) {
+function renderHome() {
   peopleList.innerHTML = "";
 
-  if (items.length === 0) {
-    peopleList.textContent = "目前沒有人物資料。";
-    return;
+  // 只要播放清單內的作品有關聯人物，就將清單歸到該人物名下。
+  // 同一人物即使有多張清單，首頁也只顯示一次。
+  const peopleWithPlaylists = new Set();
+  const standalonePlaylists = [];
+
+  allPlaylists.forEach(playlist => {
+    const playlistMediaIds = new Set(
+      allPlaylistItems
+        .filter(item => String(item.playlist_id) === String(playlist.playlist_id))
+        .map(item => String(item.media_id))
+    );
+    const relatedPersonIds = new Set(
+      allContentPeople
+        .filter(link => playlistMediaIds.has(String(link.media_id)))
+        .map(link => String(link.person_id))
+    );
+
+    if (relatedPersonIds.size) {
+      relatedPersonIds.forEach(id => peopleWithPlaylists.add(id));
+    } else {
+      standalonePlaylists.push(playlist);
+    }
+  });
+
+  const homePeople = people.filter(person =>
+    peopleWithPlaylists.has(String(person.person_id))
+  );
+
+  if (homePeople.length) renderPeople(homePeople);
+  if (standalonePlaylists.length) {
+    renderPlaylists(standalonePlaylists, allMedia, peopleList);
   }
 
+  if (!homePeople.length && !standalonePlaylists.length) {
+    peopleList.textContent = "目前沒有播放清單資料。";
+  }
+}
+
+function renderPeople(items) {
   items.forEach(person => {
     const card = document.createElement("div");
     card.className = "person-card";
@@ -523,10 +560,10 @@ function isShowingFavorites() {
     (activePage === "person" && currentCategory === "favorites");
 }
 
-function renderPlaylists(playlists, personMedia) {
+function renderPlaylists(playlists, personMedia, target = personWorks) {
   if (!playlists.length) {
-    personWorks.textContent = "目前沒有收錄相關內容。";
-    personWorks.className = "empty-message";
+    target.textContent = "目前沒有收錄相關內容。";
+    target.className = "empty-message";
     return;
   }
   playlists.forEach(playlist => {
@@ -581,7 +618,7 @@ function renderPlaylists(playlists, personMedia) {
       if (!tracks.childElementCount) tracks.textContent = "目前沒有可顯示的曲目。";
     });
     card.append(heading, tracks);
-    personWorks.appendChild(card);
+    target.appendChild(card);
   });
 }
 
