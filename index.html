@@ -3,37 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#171717">
-  <title>Media Archive｜影音典藏</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#f5f5f5">
+  <title>Media Archive</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="./js/config.js" defer></script>
+  <script src="./js/api.js" defer></script>
+  <script src="./js/app.js" defer></script>
 </head>
 <body>
-  <header class="site-header">
-    <a class="brand" href="./">Media Archive</a>
-    <span class="brand-subtitle">影音典藏</span>
-  </header>
+  <div id="header">
+    <button id="backButton" type="button">← 返回</button>
+    <h1 id="pageTitle">人物</h1>
+  </div>
 
-  <main class="page">
-    <section class="intro">
-      <p class="eyebrow">EXPLORE THE ARCHIVE</p>
-      <h1>人物典藏</h1>
-      <p class="intro-text">從人物出發，探索音樂、影像與作品。</p>
-    </section>
+  <div id="peopleList"></div>
 
-    <section class="section">
-      <div class="section-heading">
-        <h2>人物</h2>
-        <span id="people-count" class="muted"></span>
-      </div>
-      <p id="status" class="status" role="status">正在載入資料…</p>
-      <div id="people-grid" class="people-grid"></div>
-    </section>
-  </main>
+  <div id="personDetail" style="display:none;">
+    <div id="personWorks"></div>
+  </div>
 
-  <footer class="site-footer">Media Archive · 影音典藏</footer>
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">載入中...</div>
+  </div>
 
-  <script src="js/config.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/app.js"></script>
+  <div id="errorMessage" role="alert"></div>
 </body>
 </html>
