@@ -15,10 +15,11 @@ let relatedDataPromise = null;
 let currentCategory = "all";
 let favorites = [];
 let favoritesBusy = new Set();
+let favoritesPromise = Promise.resolve();
 
 document.addEventListener("google-auth-state-changed", event => {
   if (event.detail && event.detail.user) {
-    refreshFavorites();
+    favoritesPromise = refreshFavorites();
   } else {
     favorites = [];
     updateFavoriteButtons();
@@ -233,7 +234,13 @@ function createPlaceholder(name) {
 
 async function showPerson(person) {
   currentCategory = "all";
-  if (relatedDataPromise) await relatedDataPromise;
+
+  // 先等作品資料與登入者的收藏清單都載入完成，
+  // 再建立星星，避免已收藏內容先顯示空心星星再延遲變實心。
+  await Promise.all([
+    relatedDataPromise || Promise.resolve(),
+    favoritesPromise
+  ]);
 
   const personId = String(person.person_id);
   const links = allContentPeople.filter(item => String(item.person_id) === personId);
