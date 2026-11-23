@@ -107,6 +107,12 @@ function createFavoriteButton(type, id) {
 }
 
 function updateFavoriteButton(button) {
+  if (button.id === "favoritesPageButton") {
+    button.textContent = "★";
+    button.classList.add("is-favorite");
+    return;
+  }
+
   const type = button.dataset.favoriteType;
   const id = button.dataset.favoriteId;
   const active = Boolean(findFavorite(type, id));
