@@ -17,7 +17,7 @@ let favorites = [];
 let favoritesBusy = new Set();
 
 document.addEventListener("google-auth-state-changed", event => {
-  if (event.detail && event.detail.signedIn) {
+  if (event.detail && event.detail.user) {
     refreshFavorites();
   } else {
     favorites = [];
