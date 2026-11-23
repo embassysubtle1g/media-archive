@@ -2,42 +2,58 @@ body {
   margin: 0;
   font-family: Arial, sans-serif;
   background: #f5f5f5;
-  color: #222;
 }
 
-/* 固定最上方 Header */
+/* ====================
+   固定最上方 Header
+   ==================== */
+
 #header {
   position: sticky;
   top: 0;
   z-index: 1000;
+
   display: flex;
   align-items: center;
+
   background: rgba(245, 245, 245, 0.75);
+
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+
   padding: 3vw 4vw;
+
   box-sizing: border-box;
+
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* 標題 */
+
 h1 {
   padding: 0;
   margin: 0;
+
   font-size: 6vw;
   font-weight: bold;
+
   flex: 1;
 }
 
 /* 返回按鈕 */
+
 #backButton {
   display: none;
   background: white;
+
   border: none;
   border-radius: 3vw;
+
   padding: 2vw 4vw;
   margin-right: 3vw;
+
   font-size: 5vw;
+
   cursor: pointer;
 }
 
@@ -45,10 +61,14 @@ h1 {
   background: #eeeeee;
 }
 
-/* 人物列表：沿用舊版歌手列表 */
+/* ====================
+   人物列表
+   ==================== */
+
 #peopleList {
   display: flex;
   flex-direction: column;
+
   gap: 3vw;
   padding: 4vw;
 }
@@ -56,9 +76,11 @@ h1 {
 .person-card {
   display: flex;
   align-items: center;
+
   background: white;
   border-radius: 4vw;
   padding: 3vw;
+
   cursor: pointer;
 }
 
@@ -70,8 +92,10 @@ h1 {
 .person-placeholder {
   width: 25vw;
   height: 25vw;
+
   object-fit: cover;
   border-radius: 3vw;
+
   flex-shrink: 0;
 }
 
@@ -79,6 +103,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
+
   background: #e8e8e8;
   color: #666;
   font-size: 12vw;
@@ -90,18 +115,25 @@ h1 {
   font-weight: bold;
 }
 
-/* 人物作品列表 */
+/* ====================
+   人物作品
+   ==================== */
+
 #personDetail {
   padding: 4vw;
 }
 
 .work {
   background: white;
+
   padding: 5vw;
   margin-bottom: 3vw;
+
   border-radius: 4vw;
+
   font-size: 6vw;
   font-weight: bold;
+
   cursor: pointer;
 }
 
@@ -117,34 +149,53 @@ h1 {
   font-weight: normal;
 }
 
-/* 頁面動畫 */
+/* ====================
+   頁面動畫
+   ==================== */
+
 .page-enter {
   animation: pageEnter 0.3s ease;
 }
 
 @keyframes pageEnter {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Loading */
+/* ====================
+   Loading
+   ==================== */
+
 #loading {
   position: fixed;
   inset: 0;
+
   display: none;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+
   background: rgba(245, 245, 245, 0.9);
+
   z-index: 9999;
 }
 
 .spinner {
   width: 12vw;
   height: 12vw;
+
   border: 1vw solid #ddd;
   border-top: 1vw solid #333;
+
   border-radius: 50%;
+
   animation: spin 0.8s linear infinite;
 }
 
@@ -153,13 +204,8 @@ h1 {
   font-size: 5vw;
 }
 
-#errorMessage {
-  display: none;
-  padding: 4vw;
-  color: #b00020;
-  font-size: 4vw;
-}
-
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
