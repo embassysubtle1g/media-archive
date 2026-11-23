@@ -417,3 +417,29 @@ h1 {
     padding: 4px 8px;
   }
 }
+
+
+/* 頂部收藏入口 */
+.top-nav-button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 2.5vw;
+  padding: 2vw 3vw;
+  margin-left: 2vw;
+  background: #fff;
+  color: #333;
+  font-size: 3.8vw;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.top-nav-button:hover {
+  background: #eaeaea;
+}
+@media (min-width: 700px) {
+  .top-nav-button {
+    padding: 9px 16px;
+    margin-left: 12px;
+    border-radius: 9px;
+    font-size: 14px;
+  }
+}
