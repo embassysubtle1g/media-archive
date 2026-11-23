@@ -11,6 +11,9 @@ let allContentPeople = [];
 let allPlaylists = [];
 let allPlaylistItems = [];
 let people = [];
+let relatedDataPromise = null;
+let currentCategory = "all";
+const personCategoryNav = document.getElementById("personCategoryNav");
 
 document.addEventListener("DOMContentLoaded", init);
 backButton.addEventListener("click", showPeoplePage);
@@ -35,7 +38,7 @@ async function init() {
   loading.style.display = "none";
 
   // 其他資料在背景載入，不影響首頁顯示及人物點擊。
-  loadRelatedData();
+  relatedDataPromise = loadRelatedData();
 }
 
 async function loadRelatedData() {
@@ -120,53 +123,145 @@ function createPlaceholder(name) {
   return placeholder;
 }
 
-function showPerson(person) {
-  if (allContentPeople.length === 0 && allMedia.length === 0) {
-    alert("人物作品資料仍在載入，請稍後再試。");
-    return;
-  }
+async function showPerson(person) {
+  currentCategory = "all";
+  if (relatedDataPromise) await relatedDataPromise;
 
   const personId = String(person.person_id);
-  const links = allContentPeople.filter(
-    item => String(item.person_id) === personId
-  );
-
+  const links = allContentPeople.filter(item => String(item.person_id) === personId);
   const relatedMedia = links.map(link => {
-    const media = allMedia.find(
-      item => String(item.media_id) === String(link.media_id)
-    );
+    const media = allMedia.find(item => String(item.media_id) === String(link.media_id));
     return media ? { ...media, personRole: link.role } : null;
   }).filter(Boolean);
+
+  const mediaIds = new Set(relatedMedia.map(item => String(item.media_id)));
+  const playlistIds = new Set(allPlaylistItems
+    .filter(item => mediaIds.has(String(item.media_id)))
+    .map(item => String(item.playlist_id)));
+  const relatedPlaylists = allPlaylists.filter(p => playlistIds.has(String(p.playlist_id)));
+
+  const categories = [
+    { id: "all", label: "全部作品", count: relatedMedia.length },
+    { id: "albums", label: "專輯", count: relatedPlaylists.filter(isAlbum).length },
+    { id: "playlists", label: "播放清單", count: relatedPlaylists.filter(isPlaylist).length },
+    { id: "music", label: "歌曲／MV", count: relatedMedia.filter(isMusic).length },
+    { id: "video", label: "影視作品", count: relatedMedia.filter(isVideo).length }
+  ];
 
   peopleList.style.display = "none";
   personDetail.style.display = "block";
   backButton.style.display = "block";
   pageTitle.textContent = person.person_name || "人物";
-
-  renderPersonWorks(relatedMedia);
+  renderPersonCategories(categories, relatedMedia, relatedPlaylists);
   personDetail.classList.remove("page-enter");
   void personDetail.offsetWidth;
   personDetail.classList.add("page-enter");
 }
 
-function renderPersonWorks(items) {
-  personWorks.innerHTML = "";
+function isAlbum(p) {
+  const t = String(p.playlist_type || "").toLowerCase();
+  return t.includes("專輯") || t.includes("album");
+}
+function isPlaylist(p) {
+  const t = String(p.playlist_type || "").toLowerCase();
+  return t.includes("播放清單") || t.includes("歌單") || t.includes("playlist") || t.includes("list");
+}
+function isMusic(m) {
+  const t = String(m.media_type || "").toLowerCase();
+  return ["歌曲","音樂","music","song","mv"].some(v => t.includes(v));
+}
+function isVideo(m) {
+  const t = String(m.media_type || "").toLowerCase();
+  return ["影集","戲劇","電影","節目","影片","tv","movie","episode","video"].some(v => t.includes(v));
+}
 
-  if (items.length === 0) {
-    personWorks.textContent = "目前尚未收錄這個人物的作品。";
+function renderPersonCategories(categories, media, playlists) {
+  personCategoryNav.innerHTML = "";
+  categories.forEach(category => {
+    const button = document.createElement("button");
+    button.className = "category-button" + (category.id === currentCategory ? " active" : "");
+    button.textContent = category.label + " " + category.count;
+    button.addEventListener("click", () => {
+      currentCategory = category.id;
+      renderPersonCategories(categories, media, playlists);
+    });
+    personCategoryNav.appendChild(button);
+  });
+  renderPersonCategoryContent(media, playlists);
+}
+
+function renderPersonCategoryContent(media, playlists) {
+  personWorks.innerHTML = "";
+  personWorks.className = "";
+  if (currentCategory === "albums" || currentCategory === "playlists") {
+    renderPlaylists(playlists.filter(currentCategory === "albums" ? isAlbum : isPlaylist), media);
     return;
   }
+  let selected = media;
+  if (currentCategory === "music") selected = media.filter(isMusic);
+  if (currentCategory === "video") selected = media.filter(isVideo);
+  renderPersonWorks(selected);
+}
 
+function renderPlaylists(playlists, personMedia) {
+  if (!playlists.length) {
+    personWorks.textContent = "目前沒有收錄相關內容。";
+    personWorks.className = "empty-message";
+    return;
+  }
+  playlists.forEach(playlist => {
+    const card = document.createElement("div");
+    card.className = "playlist-card";
+    const title = document.createElement("div");
+    title.className = "playlist-title";
+    title.textContent = playlist.playlist_name || "未命名專輯／播放清單";
+    const meta = document.createElement("span");
+    meta.className = "playlist-meta";
+    meta.textContent = [playlist.playlist_type, playlist.release_date].filter(Boolean).join("・");
+    const tracks = document.createElement("div");
+    tracks.className = "playlist-tracks";
+    tracks.hidden = true;
+
+    card.addEventListener("click", () => {
+      tracks.hidden = !tracks.hidden;
+      if (tracks.hidden || tracks.childElementCount) return;
+      const personIds = new Set(personMedia.map(m => String(m.media_id)));
+      const items = allPlaylistItems
+        .filter(i => String(i.playlist_id) === String(playlist.playlist_id) && personIds.has(String(i.media_id)))
+        .sort((a,b) => Number(a.disc_number || 1)-Number(b.disc_number || 1) ||
+          Number(a.item_number || 0)-Number(b.item_number || 0));
+      items.forEach(item => {
+        const media = allMedia.find(m => String(m.media_id) === String(item.media_id));
+        if (!media) return;
+        const track = document.createElement("div");
+        track.className = "playlist-track";
+        track.textContent = (item.item_number ? item.item_number + ". " : "") + (media.title || "未命名作品");
+        track.addEventListener("click", event => { event.stopPropagation(); openMedia(media); });
+        tracks.appendChild(track);
+      });
+      if (!tracks.childElementCount) tracks.textContent = "目前沒有可顯示的曲目。";
+    });
+    card.append(title, meta, tracks);
+    personWorks.appendChild(card);
+  });
+}
+
+function renderPersonWorks(items) {
+  personWorks.innerHTML = "";
+  personWorks.className = "";
+  if (!items.length) {
+    personWorks.textContent = "目前尚未收錄這個分類的作品。";
+    personWorks.className = "empty-message";
+    return;
+  }
   items.forEach(media => {
     const work = document.createElement("div");
     work.className = "work";
     work.textContent = media.title || "未命名作品";
-
     const meta = document.createElement("span");
     meta.className = "work-meta";
     meta.textContent = [media.media_type, media.personRole].filter(Boolean).join("・");
     work.appendChild(meta);
-
     work.addEventListener("click", () => openMedia(media));
     personWorks.appendChild(work);
   });
@@ -205,6 +300,7 @@ function showPeoplePage() {
   peopleList.style.display = "flex";
   backButton.style.display = "none";
   pageTitle.textContent = "人物";
+  personCategoryNav.innerHTML = "";
 
   peopleList.classList.remove("page-enter");
   void peopleList.offsetWidth;
