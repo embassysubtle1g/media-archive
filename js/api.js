@@ -98,9 +98,11 @@ function callFavoriteApi(action, fields = {}) {
       callback(value);
     };
     const onMessage = event => {
-      if (event.source !== frame.contentWindow) return;
+      // Apps Script 的 HtmlService 回應可能經過內部 iframe，
+      // 因此不能只用 frame.contentWindow 判斷訊息來源。
+      // 每次請求都有獨立 nonce，只接受符合本次 nonce 的回應。
       const payload = event.data;
-      if (!payload || payload.nonce !== nonce) return;
+      if (!payload || typeof payload !== "object" || payload.nonce !== nonce) return;
       if (payload.success !== true) {
         finish(reject, new Error(payload.error || "收藏操作失敗。"));
         return;
