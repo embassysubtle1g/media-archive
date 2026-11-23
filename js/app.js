@@ -689,7 +689,7 @@ function showPeoplePage() {
   personDetail.style.display = "none";
   peopleList.style.display = "flex";
   backButton.style.display = "none";
-  pageTitle.textContent = "人物";
+  pageTitle.textContent = "清單";
   personCategoryNav.innerHTML = "";
 
   peopleList.classList.remove("page-enter");
