@@ -422,14 +422,16 @@ h1 {
 /* 頂部收藏入口 */
 .top-nav-button {
   flex: 0 0 auto;
+  width: 9vw;
+  height: 9vw;
   border: 0;
-  border-radius: 2.5vw;
-  padding: 2vw 3vw;
+  border-radius: 50%;
+  padding: 0;
   margin-left: 2vw;
   background: #fff;
-  color: #333;
-  font-size: 3.8vw;
-  white-space: nowrap;
+  color: #e5a000;
+  font-size: 6vw;
+  line-height: 1;
   cursor: pointer;
 }
 .top-nav-button:hover {
@@ -437,9 +439,9 @@ h1 {
 }
 @media (min-width: 700px) {
   .top-nav-button {
-    padding: 9px 16px;
+    width: 38px;
+    height: 38px;
     margin-left: 12px;
-    border-radius: 9px;
-    font-size: 14px;
+    font-size: 26px;
   }
 }
