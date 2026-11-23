@@ -19,34 +19,46 @@ async function init() {
   loading.style.display = "flex";
   errorMessage.style.display = "none";
 
+  // 首頁只等待 People，避免其他資料表拖住人物列表。
   try {
-    // 一次讀取人物及其關聯資料，點入人物時即可立即顯示作品。
-    const results = await Promise.all([
-      callApi("getPeople"),
-      callApi("getMedia"),
-      callApi("getContentPeople"),
-      callApi("getPlaylists"),
-      callApi("getPlaylistItems")
-    ]);
-
-    people = Array.isArray(results[0]) ? results[0] : [];
-    allMedia = Array.isArray(results[1]) ? results[1] : [];
-    allContentPeople = Array.isArray(results[2]) ? results[2] : [];
-    allPlaylists = Array.isArray(results[3]) ? results[3] : [];
-    allPlaylistItems = Array.isArray(results[4]) ? results[4] : [];
-
+    people = await callApi("getPeople");
+    people = Array.isArray(people) ? people : [];
     renderPeople(people);
   } catch (error) {
-    console.error("資料載入失敗：", error);
-    errorMessage.textContent = error.message || "資料載入失敗，請重新整理頁面。";
+    console.error("人物資料載入失敗：", error);
+    errorMessage.textContent = error.message || "人物資料載入失敗，請重新整理頁面。";
     errorMessage.style.display = "block";
-  } finally {
     loading.style.display = "none";
+    return;
   }
+
+  loading.style.display = "none";
+
+  // 其他資料在背景載入，不影響首頁顯示及人物點擊。
+  loadRelatedData();
+}
+
+async function loadRelatedData() {
+  const tasks = [
+    ["getMedia", data => { allMedia = Array.isArray(data) ? data : []; }],
+    ["getContentPeople", data => { allContentPeople = Array.isArray(data) ? data : []; }],
+    ["getPlaylists", data => { allPlaylists = Array.isArray(data) ? data : []; }],
+    ["getPlaylistItems", data => { allPlaylistItems = Array.isArray(data) ? data : []; }]
+  ];
+
+  await Promise.allSettled(tasks.map(async ([action, save]) => {
+    const data = await callApi(action);
+    save(data);
+  }));
 }
 
 function renderPeople(items) {
   peopleList.innerHTML = "";
+
+  if (items.length === 0) {
+    peopleList.textContent = "目前沒有人物資料。";
+    return;
+  }
 
   items.forEach(person => {
     const card = document.createElement("div");
@@ -60,8 +72,7 @@ function renderPeople(items) {
       image.loading = "lazy";
       image.onerror = function() {
         this.onerror = null;
-        const placeholder = createPlaceholder(person.person_name);
-        this.replaceWith(placeholder);
+        this.replaceWith(createPlaceholder(person.person_name));
       };
     } else {
       image = createPlaceholder(person.person_name);
@@ -69,12 +80,11 @@ function renderPeople(items) {
 
     const name = document.createElement("div");
     name.className = "person-name";
-    name.textContent = person.person_name || "未命名人物";
+    name.textContent = person.person_name || "";
 
     card.appendChild(image);
     card.appendChild(name);
     card.addEventListener("click", () => showPerson(person));
-
     peopleList.appendChild(card);
   });
 }
@@ -87,8 +97,12 @@ function createPlaceholder(name) {
 }
 
 function showPerson(person) {
-  const personId = String(person.person_id);
+  if (allContentPeople.length === 0 && allMedia.length === 0) {
+    alert("人物作品資料仍在載入，請稍後再試。");
+    return;
+  }
 
+  const personId = String(person.person_id);
   const links = allContentPeople.filter(
     item => String(item.person_id) === personId
   );
@@ -126,8 +140,7 @@ function renderPersonWorks(items) {
 
     const meta = document.createElement("span");
     meta.className = "work-meta";
-    const details = [media.media_type, media.personRole].filter(Boolean);
-    meta.textContent = details.join("・");
+    meta.textContent = [media.media_type, media.personRole].filter(Boolean).join("・");
     work.appendChild(meta);
 
     work.addEventListener("click", () => openMedia(media));
@@ -136,22 +149,19 @@ function renderPersonWorks(items) {
 }
 
 function openMedia(media) {
-  // 有 YouTube 影片 ID 時，直接開啟對應影片。
-  if (media.platform_video_id && String(media.platform || "").toLowerCase().includes("youtube")) {
-    const url = "https://www.youtube.com/watch?v=" +
-      encodeURIComponent(media.platform_video_id);
-    openExternal(url);
+  if (media.platform_video_id &&
+      String(media.platform || "").toLowerCase().includes("youtube")) {
+    openExternal("https://www.youtube.com/watch?v=" +
+      encodeURIComponent(media.platform_video_id));
     return;
   }
 
-  // 其他平台若 source_id 本身是網址，也可直接開啟。
   const source = String(media.source_id || "").trim();
   if (/^https?:\/\//i.test(source)) {
     openExternal(source);
     return;
   }
 
-  // 尚未設定播放來源時，先不導向錯誤網址。
   alert("這項作品目前尚未設定播放連結。");
 }
 
