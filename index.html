@@ -16,12 +16,20 @@
     <button id="backButton" type="button">← 返回</button>
     <h1 id="pageTitle">人物</h1>
     <button id="favoritesPageButton" class="favorite-button is-favorite" type="button" aria-label="查看收藏" title="查看收藏">★</button>
-    <div id="accountArea">
-      <div id="googleSignInButton"></div>
+    <div id="accountArea" hidden>
       <div id="signedInArea" hidden>
         <span id="accountName"></span>
         <button id="signOutButton" type="button">登出</button>
       </div>
+    </div>
+  </div>
+
+  <div id="signInModal" class="sign-in-modal" hidden>
+    <div class="sign-in-dialog" role="dialog" aria-modal="true" aria-labelledby="signInTitle">
+      <button id="closeSignInModal" class="close-modal-button" type="button" aria-label="關閉">×</button>
+      <h2 id="signInTitle">登入以收藏</h2>
+      <p>使用 Google 帳戶登入後，即可同步你的收藏內容。</p>
+      <div id="googleSignInButton"></div>
     </div>
   </div>
 
