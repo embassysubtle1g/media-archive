@@ -78,7 +78,8 @@
 
     google.accounts.id.initialize({
       client_id: clientId,
-      callback: window.handleGoogleCredential
+      callback: window.handleGoogleCredential,
+      auto_select: true
     });
 
     google.accounts.id.renderButton(signInContainer, {
@@ -89,6 +90,10 @@
       shape: "pill",
       locale: "zh-TW"
     });
+
+    // 若使用者先前已授權且 Google 帳戶仍有效，嘗試自動恢復登入。
+    // Google 可能因瀏覽器隱私設定或帳戶狀態而不提供自動登入。
+    google.accounts.id.prompt();
   }
 
   function loadGoogleIdentityServices() {
