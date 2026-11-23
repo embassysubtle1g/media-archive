@@ -157,7 +157,15 @@ const personCategoryNav = document.getElementById("personCategoryNav");
 
 document.addEventListener("DOMContentLoaded", init);
 backButton.addEventListener("click", showPeoplePage);
-favoritesPageButton.addEventListener("click", showFavoritesPage);
+favoritesPageButton.addEventListener("click", () => {
+  if (!window.MediaArchiveAuth || !window.MediaArchiveAuth.isSignedIn()) {
+    if (window.MediaArchiveAuth && window.MediaArchiveAuth.showSignIn) {
+      window.MediaArchiveAuth.showSignIn();
+    }
+    return;
+  }
+  showFavoritesPage();
+});
 
 async function init() {
   // 保險：若登入狀態已恢復，但登入事件未觸發，主動補載收藏清單。
