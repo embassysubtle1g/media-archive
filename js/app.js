@@ -440,6 +440,70 @@ async function showFavoritesPage() {
   renderFavoriteCollection(allMedia, allPlaylists);
 }
 
+// 將資料庫中的英文分類轉成前端中文顯示，不修改試算表原始資料。
+function translateDisplayValue(value, dictionary) {
+  const original = String(value || "").trim();
+  if (!original) return "";
+  const key = original.toLowerCase().replace(/[ _-]+/g, " ");
+  return dictionary[key] || original;
+}
+
+function translateMediaType(value) {
+  return translateDisplayValue(value, {
+    "song": "歌曲",
+    "music": "音樂",
+    "music video": "音樂錄影帶",
+    "mv": "音樂錄影帶",
+    "video": "影片",
+    "movie": "電影",
+    "film": "電影",
+    "tv": "電視節目",
+    "tv show": "電視節目",
+    "tv series": "影集",
+    "series": "影集",
+    "drama": "戲劇",
+    "episode": "單集",
+    "program": "節目",
+    "show": "節目",
+    "documentary": "紀錄片",
+    "podcast": "Podcast"
+  });
+}
+
+function translatePlaylistType(value) {
+  return translateDisplayValue(value, {
+    "album": "專輯",
+    "ep": "迷你專輯",
+    "single": "單曲",
+    "playlist": "播放清單",
+    "play list": "播放清單",
+    "list": "播放清單",
+    "compilation": "合輯",
+    "soundtrack": "原聲帶"
+  });
+}
+
+function translatePersonRole(value) {
+  return translateDisplayValue(value, {
+    "singer": "歌手",
+    "vocalist": "主唱",
+    "artist": "藝人",
+    "actor": "演員",
+    "actress": "演員",
+    "director": "導演",
+    "producer": "製作人",
+    "composer": "作曲",
+    "lyricist": "作詞",
+    "songwriter": "詞曲創作",
+    "musician": "音樂人",
+    "band": "樂團",
+    "group": "團體",
+    "host": "主持人",
+    "presenter": "主持人",
+    "writer": "編劇／作者"
+  });
+}
+
 function renderPlaylists(playlists, personMedia) {
   if (!playlists.length) {
     personWorks.textContent = "目前沒有收錄相關內容。";
@@ -458,7 +522,7 @@ function renderPlaylists(playlists, personMedia) {
     title.textContent = playlist.playlist_name || "未命名專輯／播放清單";
     const meta = document.createElement("span");
     meta.className = "playlist-meta";
-    meta.textContent = [playlist.playlist_type, playlist.release_date].filter(Boolean).join("・");
+    meta.textContent = [translatePlaylistType(playlist.playlist_type), playlist.release_date].filter(Boolean).join("・");
     headingContent.append(title, meta);
     heading.append(headingContent, createFavoriteButton("playlist", playlist.playlist_id));
     const tracks = document.createElement("div");
@@ -510,7 +574,7 @@ function renderPersonWorks(items) {
     title.textContent = media.title || "未命名作品";
     const meta = document.createElement("span");
     meta.className = "work-meta";
-    meta.textContent = [media.media_type, media.personRole].filter(Boolean).join("・");
+    meta.textContent = [translateMediaType(media.media_type), translatePersonRole(media.personRole)].filter(Boolean).join("・");
     content.append(title, meta);
     work.append(content, createFavoriteButton("media", media.media_id));
     work.addEventListener("click", () => openMedia(media));
