@@ -418,3 +418,66 @@ h1 {
   }
 }
 
+
+
+/* 登入視窗：平時不佔用頁面空間，點擊收藏時才顯示 */
+#accountArea[hidden] {
+  display: none;
+}
+
+.sign-in-modal[hidden] {
+  display: none;
+}
+
+.sign-in-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6vw;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.sign-in-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  box-sizing: border-box;
+  padding: 28px 22px;
+  border-radius: 18px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.sign-in-dialog h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+}
+
+.sign-in-dialog p {
+  margin: 0 0 22px;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+#googleSignInButton {
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.close-modal-button {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 0;
+  background: transparent;
+  color: #777;
+  font-size: 28px;
+  cursor: pointer;
+}
