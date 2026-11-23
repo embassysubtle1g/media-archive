@@ -209,3 +209,52 @@ h1 {
     transform: rotate(360deg);
   }
 }
+
+
+/* 人物內容分類 */
+.category-nav {
+  display: flex;
+  gap: 2vw;
+  overflow-x: auto;
+  padding: 1vw 0 4vw;
+  scrollbar-width: none;
+}
+.category-nav::-webkit-scrollbar { display: none; }
+.category-button {
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 3vw;
+  padding: 2.5vw 4vw;
+  background: white;
+  color: #333;
+  font-size: 4vw;
+  cursor: pointer;
+}
+.category-button.active { background: #333; color: white; }
+.playlist-card {
+  background: white;
+  padding: 4vw;
+  margin-bottom: 3vw;
+  border-radius: 4vw;
+  cursor: pointer;
+}
+.playlist-title { font-size: 5.5vw; font-weight: bold; }
+.playlist-meta {
+  display: block;
+  margin-top: 1.5vw;
+  color: #777;
+  font-size: 3.5vw;
+  font-weight: normal;
+}
+.playlist-tracks {
+  margin-top: 3vw;
+  padding-top: 2vw;
+  border-top: 1px solid #eee;
+}
+.playlist-track {
+  padding: 3vw 1vw;
+  border-bottom: 1px solid #eee;
+  font-size: 4.5vw;
+  cursor: pointer;
+}
+.empty-message { padding: 5vw; color: #777; font-size: 4vw; }
