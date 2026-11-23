@@ -258,6 +258,7 @@ function createPlaceholder(name) {
 
 async function showPerson(person) {
   activePage = "person";
+  favoritesPageButton.style.display = "none";
   currentPersonMedia = [];
   currentPersonPlaylists = [];
   currentCategory = "favorites";
@@ -400,6 +401,7 @@ function renderCurrentFavoriteView() {
 
 async function showFavoritesPage() {
   activePage = "favorites";
+  favoritesPageButton.style.display = "none";
   peopleList.style.display = "none";
   personDetail.style.display = "block";
   backButton.style.display = "block";
@@ -522,6 +524,7 @@ function openExternal(url) {
 
 function showPeoplePage() {
   activePage = "people";
+  favoritesPageButton.style.display = "inline-flex";
   currentPersonMedia = [];
   currentPersonPlaylists = [];
   personDetail.style.display = "none";
