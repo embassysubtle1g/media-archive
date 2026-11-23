@@ -3,6 +3,7 @@ const personDetail = document.getElementById("personDetail");
 const personWorks = document.getElementById("personWorks");
 const pageTitle = document.getElementById("pageTitle");
 const backButton = document.getElementById("backButton");
+const favoritesPageButton = document.getElementById("favoritesPageButton");
 const loading = document.getElementById("loading");
 const errorMessage = document.getElementById("errorMessage");
 
@@ -18,17 +19,23 @@ let favoritesBusy = new Set();
 let favoritesPromise = Promise.resolve();
 let favoritesLoaded = false;
 let favoritesLoadStarted = false;
+let activePage = "people";
+let currentPersonMedia = [];
+let currentPersonPlaylists = [];
 
 window.addEventListener("google-auth-state-changed", event => {
   if (event.detail && event.detail.user) {
     favoritesLoadStarted = true;
     favoritesLoaded = false;
-    favoritesPromise = refreshFavorites();
+    favoritesPromise = refreshFavorites().then(() => {
+      renderCurrentFavoriteView();
+    });
   } else {
     favorites = [];
     favoritesLoaded = false;
     favoritesLoadStarted = false;
     updateFavoriteButtons();
+    renderCurrentFavoriteView();
   }
 });
 
@@ -90,6 +97,7 @@ function createFavoriteButton(type, id) {
       favoritesBusy.delete(key);
       button.disabled = false;
       updateFavoriteButtons();
+      renderCurrentFavoriteView();
     }
   });
   button.dataset.favoriteType = type;
@@ -135,6 +143,7 @@ const personCategoryNav = document.getElementById("personCategoryNav");
 
 document.addEventListener("DOMContentLoaded", init);
 backButton.addEventListener("click", showPeoplePage);
+favoritesPageButton.addEventListener("click", showFavoritesPage);
 
 async function init() {
   // 保險：若登入狀態已恢復，但登入事件未觸發，主動補載收藏清單。
@@ -248,7 +257,10 @@ function createPlaceholder(name) {
 }
 
 async function showPerson(person) {
-  currentCategory = "all";
+  activePage = "person";
+  currentPersonMedia = [];
+  currentPersonPlaylists = [];
+  currentCategory = "favorites";
 
   // 若初次讀取收藏失敗，進入人物頁時再補讀一次，不必手動點收藏觸發同步。
   if (window.MediaArchiveAuth && window.MediaArchiveAuth.isSignedIn() && !favoritesLoaded && !favoritesLoadStarted) {
@@ -276,7 +288,15 @@ async function showPerson(person) {
     .map(item => String(item.playlist_id)));
   const relatedPlaylists = allPlaylists.filter(p => playlistIds.has(String(p.playlist_id)));
 
+  currentPersonMedia = relatedMedia;
+  currentPersonPlaylists = relatedPlaylists;
+
+  const favoriteCount =
+    relatedMedia.filter(item => Boolean(findFavorite("media", item.media_id))).length +
+    relatedPlaylists.filter(item => Boolean(findFavorite("playlist", item.playlist_id))).length;
+
   const categories = [
+    { id: "favorites", label: "已收藏", count: favoriteCount },
     { id: "all", label: "全部作品", count: relatedMedia.length },
     { id: "albums", label: "專輯", count: relatedPlaylists.filter(isAlbum).length },
     { id: "playlists", label: "播放清單", count: relatedPlaylists.filter(isPlaylist).length },
@@ -329,6 +349,10 @@ function renderPersonCategories(categories, media, playlists) {
 function renderPersonCategoryContent(media, playlists) {
   personWorks.innerHTML = "";
   personWorks.className = "";
+  if (currentCategory === "favorites") {
+    renderFavoriteCollection(media, playlists);
+    return;
+  }
   if (currentCategory === "albums" || currentCategory === "playlists") {
     renderPlaylists(playlists.filter(currentCategory === "albums" ? isAlbum : isPlaylist), media);
     return;
@@ -337,6 +361,57 @@ function renderPersonCategoryContent(media, playlists) {
   if (currentCategory === "music") selected = media.filter(isMusic);
   if (currentCategory === "video") selected = media.filter(isVideo);
   renderPersonWorks(selected);
+}
+
+function renderFavoriteCollection(media, playlists) {
+  personWorks.innerHTML = "";
+  personWorks.className = "";
+
+  if (!window.MediaArchiveAuth || !window.MediaArchiveAuth.isSignedIn()) {
+    personWorks.textContent = "請先使用 Google 帳戶登入，查看你的收藏。";
+    personWorks.className = "empty-message";
+    return;
+  }
+
+  const favoriteMedia = media.filter(item =>
+    Boolean(findFavorite("media", item.media_id))
+  );
+  const favoritePlaylists = playlists.filter(item =>
+    Boolean(findFavorite("playlist", item.playlist_id))
+  );
+
+  if (!favoriteMedia.length && !favoritePlaylists.length) {
+    personWorks.textContent = "目前還沒有收藏內容。";
+    personWorks.className = "empty-message";
+    return;
+  }
+
+  if (favoriteMedia.length) renderPersonWorks(favoriteMedia);
+  if (favoritePlaylists.length) renderPlaylists(favoritePlaylists, media);
+}
+
+function renderCurrentFavoriteView() {
+  if (activePage === "favorites") {
+    renderFavoriteCollection(allMedia, allPlaylists);
+  } else if (activePage === "person" && currentCategory === "favorites") {
+    renderFavoriteCollection(currentPersonMedia, currentPersonPlaylists);
+  }
+}
+
+async function showFavoritesPage() {
+  activePage = "favorites";
+  peopleList.style.display = "none";
+  personDetail.style.display = "block";
+  backButton.style.display = "block";
+  pageTitle.textContent = "收藏";
+  personCategoryNav.innerHTML = "";
+  personWorks.innerHTML = '<div class="empty-message">載入收藏中...</div>';
+
+  await Promise.all([
+    relatedDataPromise || Promise.resolve(),
+    favoritesPromise
+  ]);
+  renderFavoriteCollection(allMedia, allPlaylists);
 }
 
 function renderPlaylists(playlists, personMedia) {
@@ -446,6 +521,9 @@ function openExternal(url) {
 }
 
 function showPeoplePage() {
+  activePage = "people";
+  currentPersonMedia = [];
+  currentPersonPlaylists = [];
   personDetail.style.display = "none";
   peopleList.style.display = "flex";
   backButton.style.display = "none";
