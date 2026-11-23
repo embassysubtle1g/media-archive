@@ -19,7 +19,7 @@ let favoritesPromise = Promise.resolve();
 let favoritesLoaded = false;
 let favoritesLoadStarted = false;
 
-document.addEventListener("google-auth-state-changed", event => {
+window.addEventListener("google-auth-state-changed", event => {
   if (event.detail && event.detail.user) {
     favoritesLoadStarted = true;
     favoritesLoaded = false;
