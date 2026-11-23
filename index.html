@@ -8,12 +8,20 @@
   <link rel="stylesheet" href="./css/style.css">
   <script src="./js/config.js" defer></script>
   <script src="./js/api.js" defer></script>
+  <script src="./js/auth.js" defer></script>
   <script src="./js/app.js" defer></script>
 </head>
 <body>
   <div id="header">
     <button id="backButton" type="button">← 返回</button>
     <h1 id="pageTitle">人物</h1>
+    <div id="accountArea">
+      <div id="googleSignInButton"></div>
+      <div id="signedInArea" hidden>
+        <span id="accountName"></span>
+        <button id="signOutButton" type="button">登出</button>
+      </div>
+    </div>
   </div>
 
   <div id="peopleList"></div>
