@@ -7,10 +7,8 @@
   let restoredSession = false;
 
   const signInContainer = document.getElementById("googleSignInButton");
-  const accountArea = document.getElementById("accountArea");
   const signInModal = document.getElementById("signInModal");
   const closeSignInModalButton = document.getElementById("closeSignInModal");
-  const signedInArea = document.getElementById("signedInArea");
   const accountName = document.getElementById("accountName");
   const signOutButton = document.getElementById("signOutButton");
 
@@ -29,13 +27,10 @@
 
   function updateAccountUI() {
     if (signedInUser) {
-      accountArea.hidden = false;
       signInModal.hidden = true;
-      signedInArea.hidden = false;
       accountName.textContent = signedInUser.name || signedInUser.email || "已登入";
     } else {
-      accountArea.hidden = true;
-      signedInArea.hidden = true;
+
       accountName.textContent = "";
     }
 
