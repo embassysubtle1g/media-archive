@@ -125,6 +125,7 @@ async function refreshFavorites() {
     updateFavoriteButtons();
   } catch (error) {
     favoritesLoaded = false;
+    favoritesLoadStarted = false;
     console.error("讀取收藏清單失敗：", error);
     alert(error.message || "讀取收藏清單失敗。");
   }
@@ -250,7 +251,7 @@ async function showPerson(person) {
   currentCategory = "all";
 
   // 若初次讀取收藏失敗，進入人物頁時再補讀一次，不必手動點收藏觸發同步。
-  if (window.MediaArchiveAuth && window.MediaArchiveAuth.isSignedIn() && !favoritesLoaded) {
+  if (window.MediaArchiveAuth && window.MediaArchiveAuth.isSignedIn() && !favoritesLoaded && !favoritesLoadStarted) {
     favoritesLoadStarted = true;
     favoritesPromise = refreshFavorites();
   }
