@@ -48,16 +48,35 @@ function createFavoriteButton(type, id) {
     if (favoritesBusy.has(key)) return;
     favoritesBusy.add(key);
     button.disabled = true;
+
+    // 先更新畫面，避免使用者等待伺服器回應才看到星星變化。
+    const previousFavorites = favorites.slice();
+    const existing = findFavorite(type, id);
+
+    if (existing) {
+      favorites = favorites.filter(item => item !== existing);
+    } else {
+      const field = type === "media" ? "media_id" : "playlist_id";
+      favorites.push({
+        favorite_id: "__pending__",
+        [field]: id
+      });
+    }
+    updateFavoriteButtons();
+
     try {
-      const existing = findFavorite(type, id);
       if (existing) {
         await callFavoriteApi("removeFavorite", { favorite_id: existing.favorite_id });
       } else {
         const field = type === "media" ? "media_id" : "playlist_id";
         await callFavoriteApi("addFavorite", { [field]: id });
+
+        // 新增成功後重新取得正式 favorite_id，供日後取消收藏使用。
+        await refreshFavorites();
       }
-      await refreshFavorites();
     } catch (error) {
+      favorites = previousFavorites;
+      updateFavoriteButtons();
       console.error("收藏操作失敗：", error);
       alert(error.message || "收藏操作失敗，請稍後再試。");
     } finally {
