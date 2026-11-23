@@ -359,3 +359,61 @@ h1 {
     font-size: 14px;
   }
 }
+
+
+/* 收藏星號：沿用原本作品卡片，只在右側增加操作 */
+.work {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+}
+.work-content {
+  flex: 1;
+  min-width: 0;
+}
+.work-title {
+  min-width: 0;
+}
+.favorite-button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #888;
+  font-size: 7vw;
+  line-height: 1;
+  padding: 1vw 1.5vw;
+  cursor: pointer;
+}
+.favorite-button.is-favorite {
+  color: #e5a000;
+}
+.favorite-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.playlist-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+}
+.playlist-heading-content {
+  flex: 1;
+  min-width: 0;
+}
+.playlist-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+}
+.playlist-track-title {
+  flex: 1;
+  min-width: 0;
+}
+@media (min-width: 700px) {
+  .favorite-button {
+    font-size: 28px;
+    padding: 4px 8px;
+  }
+}
