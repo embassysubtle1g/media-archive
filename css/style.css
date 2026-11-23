@@ -481,3 +481,42 @@ h1 {
   font-size: 28px;
   cursor: pointer;
 }
+
+
+/* 登出入口只在收藏頁顯示 */
+#favoritesAccountArea {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0 0 3vw;
+  padding: 0 1vw 2vw;
+  color: #666;
+  font-size: 3.5vw;
+}
+
+#favoritesAccountArea[hidden] {
+  display: none;
+}
+
+#favoritesAccountArea #accountName {
+  max-width: 60%;
+  font-size: inherit;
+}
+
+#signOutButton {
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 12px;
+  background: #fff;
+  color: #444;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+@media (min-width: 700px) {
+  #favoritesAccountArea {
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+}
