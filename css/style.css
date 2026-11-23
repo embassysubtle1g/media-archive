@@ -1,88 +1,165 @@
-:root {
-  color-scheme: dark;
-  --bg: #111214;
-  --surface: #1b1d21;
-  --text: #f3f3f3;
-  --muted: #9b9da3;
-  --accent: #d8b878;
-  --border: #303238;
-}
-
-* { box-sizing: border-box; }
-
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: Arial, "Noto Sans TC", sans-serif;
-  line-height: 1.6;
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  color: #222;
 }
 
-a { color: inherit; text-decoration: none; }
-
-.site-header {
+/* 固定最上方 Header */
+#header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 20px max(5vw, 20px);
-  border-bottom: 1px solid var(--border);
+  align-items: center;
+  background: rgba(245, 245, 245, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 3vw 4vw;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.brand { font-size: 20px; font-weight: 700; letter-spacing: .04em; }
-.brand-subtitle, .muted { color: var(--muted); font-size: 13px; }
+/* 標題 */
+h1 {
+  padding: 0;
+  margin: 0;
+  font-size: 6vw;
+  font-weight: bold;
+  flex: 1;
+}
 
-.page { width: min(1100px, 90%); margin: 0 auto; }
-.intro { padding: 64px 0 38px; }
-.eyebrow { color: var(--accent); font-size: 11px; letter-spacing: .2em; }
-h1 { margin: 8px 0; font-size: clamp(32px, 5vw, 48px); }
-.intro-text { color: var(--muted); margin: 8px 0 0; }
+/* 返回按鈕 */
+#backButton {
+  display: none;
+  background: white;
+  border: none;
+  border-radius: 3vw;
+  padding: 2vw 4vw;
+  margin-right: 3vw;
+  font-size: 5vw;
+  cursor: pointer;
+}
 
-.section { padding: 20px 0 64px; }
-.section-heading { display: flex; align-items: center; gap: 14px; }
-.section-heading h2 { margin: 0; font-size: 22px; }
-.status { color: var(--muted); padding: 20px 0; }
+#backButton:hover {
+  background: #eeeeee;
+}
 
-.people-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 22px;
+/* 人物列表：沿用舊版歌手列表 */
+#peopleList {
+  display: flex;
+  flex-direction: column;
+  gap: 3vw;
+  padding: 4vw;
 }
 
 .person-card {
-  overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 4vw;
+  padding: 3vw;
+  cursor: pointer;
 }
 
-.person-image {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1 / 1;
+.person-card:hover {
+  background: #eeeeee;
+}
+
+.person-card img,
+.person-placeholder {
+  width: 25vw;
+  height: 25vw;
   object-fit: cover;
-  background: #27292e;
+  border-radius: 3vw;
+  flex-shrink: 0;
 }
 
 .person-placeholder {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  color: var(--muted);
-  background: #27292e;
-  font-size: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e8e8;
+  color: #666;
+  font-size: 12vw;
 }
 
-.person-name { margin: 0; padding: 12px 14px 14px; font-size: 15px; }
-.site-footer {
-  padding: 24px 5%;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  text-align: center;
-  font-size: 12px;
+.person-name {
+  font-size: 6vw;
+  margin-left: 5vw;
+  font-weight: bold;
 }
 
-@media (max-width: 520px) {
-  .intro { padding-top: 44px; }
-  .people-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+/* 人物作品列表 */
+#personDetail {
+  padding: 4vw;
+}
+
+.work {
+  background: white;
+  padding: 5vw;
+  margin-bottom: 3vw;
+  border-radius: 4vw;
+  font-size: 6vw;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.work:hover {
+  background: #eeeeee;
+}
+
+.work-meta {
+  display: block;
+  margin-top: 1.5vw;
+  color: #777;
+  font-size: 3.5vw;
+  font-weight: normal;
+}
+
+/* 頁面動畫 */
+.page-enter {
+  animation: pageEnter 0.3s ease;
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Loading */
+#loading {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(245, 245, 245, 0.9);
+  z-index: 9999;
+}
+
+.spinner {
+  width: 12vw;
+  height: 12vw;
+  border: 1vw solid #ddd;
+  border-top: 1vw solid #333;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+  margin-top: 4vw;
+  font-size: 5vw;
+}
+
+#errorMessage {
+  display: none;
+  padding: 4vw;
+  color: #b00020;
+  font-size: 4vw;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
