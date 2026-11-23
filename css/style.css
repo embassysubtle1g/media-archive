@@ -120,7 +120,12 @@ h1 {
    ==================== */
 
 #personDetail {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 4vw;
+  overflow-x: hidden;
 }
 
 .work {
@@ -215,18 +220,22 @@ h1 {
 .category-nav {
   display: flex;
   flex-wrap: nowrap;
+  justify-content: flex-start;
   gap: 2vw;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  overflow-x: auto;
+  overflow-x: scroll;
   overflow-y: hidden;
   padding: 1vw 0 4vw;
-  scrollbar-width: none;
+  scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  cursor: grab;
 }
-.category-nav::-webkit-scrollbar { display: none; }
+.category-nav:active { cursor: grabbing; }
  .category-button {
   flex: 0 0 auto;
   white-space: nowrap;
