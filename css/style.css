@@ -379,7 +379,7 @@ h1 {
   border: 0;
   background: transparent;
   color: #888;
-  font-size: 8.5vw;
+  font-size: 11vw;
   line-height: 1;
   padding: 1vw 1.5vw;
   cursor: pointer;
@@ -413,7 +413,7 @@ h1 {
 }
 @media (min-width: 700px) {
   .favorite-button {
-    font-size: 32px;
+    font-size: 40px;
     padding: 4px 8px;
   }
 }
