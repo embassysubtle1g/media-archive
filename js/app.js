@@ -353,6 +353,9 @@ async function showPerson(person) {
     relatedMedia.filter(item => Boolean(findFavorite("media", item.media_id))).length +
     relatedPlaylists.filter(item => Boolean(findFavorite("playlist", item.playlist_id))).length;
 
+  // 有收藏時預設顯示收藏；沒有收藏時直接顯示全部作品。
+  currentCategory = favoriteCount > 0 ? "favorites" : "all";
+
   const categories = [
     { id: "favorites", label: "已收藏", count: favoriteCount },
     { id: "all", label: "全部作品", count: relatedMedia.length },
