@@ -4,6 +4,7 @@ const personWorks = document.getElementById("personWorks");
 const pageTitle = document.getElementById("pageTitle");
 const backButton = document.getElementById("backButton");
 const favoritesPageButton = document.getElementById("favoritesPageButton");
+const favoritesAccountArea = document.getElementById("favoritesAccountArea");
 const loading = document.getElementById("loading");
 const errorMessage = document.getElementById("errorMessage");
 
@@ -23,7 +24,12 @@ let activePage = "people";
 let currentPersonMedia = [];
 let currentPersonPlaylists = [];
 
+function updateFavoritesAccountVisibility() {
+  favoritesAccountArea.hidden = !(activePage === "favorites" && window.MediaArchiveAuth && window.MediaArchiveAuth.isSignedIn());
+}
+
 window.addEventListener("google-auth-state-changed", event => {
+  updateFavoritesAccountVisibility();
   if (event.detail && event.detail.user) {
     favoritesLoadStarted = true;
     favoritesLoaded = false;
@@ -266,6 +272,7 @@ function createPlaceholder(name) {
 
 async function showPerson(person) {
   activePage = "person";
+  updateFavoritesAccountVisibility();
   favoritesPageButton.style.display = "none";
   currentPersonMedia = [];
   currentPersonPlaylists = [];
@@ -409,6 +416,7 @@ function renderCurrentFavoriteView() {
 
 async function showFavoritesPage() {
   activePage = "favorites";
+  updateFavoritesAccountVisibility();
   favoritesPageButton.style.display = "none";
   peopleList.style.display = "none";
   personDetail.style.display = "block";
@@ -532,6 +540,7 @@ function openExternal(url) {
 
 function showPeoplePage() {
   activePage = "people";
+  updateFavoritesAccountVisibility();
   favoritesPageButton.style.display = "inline-flex";
   currentPersonMedia = [];
   currentPersonPlaylists = [];
