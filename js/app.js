@@ -16,12 +16,18 @@ let currentCategory = "all";
 let favorites = [];
 let favoritesBusy = new Set();
 let favoritesPromise = Promise.resolve();
+let favoritesLoaded = false;
+let favoritesLoadStarted = false;
 
 document.addEventListener("google-auth-state-changed", event => {
   if (event.detail && event.detail.user) {
+    favoritesLoadStarted = true;
+    favoritesLoaded = false;
     favoritesPromise = refreshFavorites();
   } else {
     favorites = [];
+    favoritesLoaded = false;
+    favoritesLoadStarted = false;
     updateFavoriteButtons();
   }
 });
@@ -115,8 +121,10 @@ async function refreshFavorites() {
   try {
     const data = await callFavoriteApi("getFavorites");
     favorites = Array.isArray(data) ? data : [];
+    favoritesLoaded = true;
     updateFavoriteButtons();
   } catch (error) {
+    favoritesLoaded = false;
     console.error("讀取收藏清單失敗：", error);
     alert(error.message || "讀取收藏清單失敗。");
   }
@@ -128,6 +136,12 @@ document.addEventListener("DOMContentLoaded", init);
 backButton.addEventListener("click", showPeoplePage);
 
 async function init() {
+  // 保險：若登入狀態已恢復，但登入事件未觸發，主動補載收藏清單。
+  if (window.MediaArchiveAuth && window.MediaArchiveAuth.isSignedIn() && !favoritesLoadStarted) {
+    favoritesLoadStarted = true;
+    favoritesPromise = refreshFavorites();
+  }
+
   loading.style.display = "flex";
   errorMessage.style.display = "none";
 
@@ -234,6 +248,12 @@ function createPlaceholder(name) {
 
 async function showPerson(person) {
   currentCategory = "all";
+
+  // 若初次讀取收藏失敗，進入人物頁時再補讀一次，不必手動點收藏觸發同步。
+  if (window.MediaArchiveAuth && window.MediaArchiveAuth.isSignedIn() && !favoritesLoaded) {
+    favoritesLoadStarted = true;
+    favoritesPromise = refreshFavorites();
+  }
 
   // 先等作品資料與登入者的收藏清單都載入完成，
   // 再建立星星，避免已收藏內容先顯示空心星星再延遲變實心。
