@@ -504,6 +504,25 @@ function translatePersonRole(value) {
   });
 }
 
+function getRelatedPersonNames(mediaIds) {
+  const idSet = new Set([...mediaIds].map(id => String(id)));
+  const personIds = new Set(
+    allContentPeople
+      .filter(link => idSet.has(String(link.media_id)))
+      .map(link => String(link.person_id))
+  );
+  return people
+    .filter(person => personIds.has(String(person.person_id)))
+    .map(person => person.person_name)
+    .filter(Boolean)
+    .filter((name, index, names) => names.indexOf(name) === index);
+}
+
+function isShowingFavorites() {
+  return activePage === "favorites" ||
+    (activePage === "person" && currentCategory === "favorites");
+}
+
 function renderPlaylists(playlists, personMedia) {
   if (!playlists.length) {
     personWorks.textContent = "目前沒有收錄相關內容。";
@@ -522,7 +541,17 @@ function renderPlaylists(playlists, personMedia) {
     title.textContent = playlist.playlist_name || "未命名專輯／播放清單";
     const meta = document.createElement("span");
     meta.className = "playlist-meta";
-    meta.textContent = [translatePlaylistType(playlist.playlist_type), playlist.release_date].filter(Boolean).join("・");
+    const playlistMediaIds = allPlaylistItems
+      .filter(item => String(item.playlist_id) === String(playlist.playlist_id))
+      .map(item => item.media_id);
+    const playlistPeople = isShowingFavorites()
+      ? getRelatedPersonNames(playlistMediaIds)
+      : [];
+    meta.textContent = [
+      translatePlaylistType(playlist.playlist_type),
+      playlist.release_date,
+      playlistPeople.length ? "人物：" + playlistPeople.join("、") : ""
+    ].filter(Boolean).join("・");
     headingContent.append(title, meta);
     heading.append(headingContent, createFavoriteButton("playlist", playlist.playlist_id));
     const tracks = document.createElement("div");
@@ -574,7 +603,14 @@ function renderPersonWorks(items) {
     title.textContent = media.title || "未命名作品";
     const meta = document.createElement("span");
     meta.className = "work-meta";
-    meta.textContent = [translateMediaType(media.media_type), translatePersonRole(media.personRole)].filter(Boolean).join("・");
+    const mediaPeople = isShowingFavorites()
+      ? getRelatedPersonNames([media.media_id])
+      : [];
+    meta.textContent = [
+      translateMediaType(media.media_type),
+      translatePersonRole(media.personRole),
+      mediaPeople.length ? "人物：" + mediaPeople.join("、") : ""
+    ].filter(Boolean).join("・");
     content.append(title, meta);
     work.append(content, createFavoriteButton("media", media.media_id));
     work.addEventListener("click", () => openMedia(media));
