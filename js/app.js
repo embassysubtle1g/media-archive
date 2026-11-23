@@ -55,7 +55,9 @@ function createFavoriteButton(type, id) {
   button.addEventListener("click", async event => {
     event.stopPropagation();
     if (!window.MediaArchiveAuth || !window.MediaArchiveAuth.isSignedIn()) {
-      alert("請先使用 Google 帳戶登入，才能收藏。");
+      if (window.MediaArchiveAuth && window.MediaArchiveAuth.showSignIn) {
+        window.MediaArchiveAuth.showSignIn();
+      }
       return;
     }
     const key = type + ":" + String(id);
