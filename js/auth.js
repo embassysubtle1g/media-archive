@@ -7,6 +7,9 @@
   let restoredSession = false;
 
   const signInContainer = document.getElementById("googleSignInButton");
+  const accountArea = document.getElementById("accountArea");
+  const signInModal = document.getElementById("signInModal");
+  const closeSignInModalButton = document.getElementById("closeSignInModal");
   const signedInArea = document.getElementById("signedInArea");
   const accountName = document.getElementById("accountName");
   const signOutButton = document.getElementById("signOutButton");
@@ -26,11 +29,12 @@
 
   function updateAccountUI() {
     if (signedInUser) {
-      signInContainer.hidden = true;
+      accountArea.hidden = false;
+      signInModal.hidden = true;
       signedInArea.hidden = false;
       accountName.textContent = signedInUser.name || signedInUser.email || "已登入";
     } else {
-      signInContainer.hidden = false;
+      accountArea.hidden = true;
       signedInArea.hidden = true;
       accountName.textContent = "";
     }
@@ -100,10 +104,7 @@
       locale: "zh-TW"
     });
 
-    // 若本分頁已恢復有效工作階段，就不再額外彈出 Google 登入提示。
-    if (!restoredSession) {
-      google.accounts.id.prompt();
-    }
+
   }
 
   function loadGoogleIdentityServices() {
@@ -117,6 +118,23 @@
     };
     document.head.appendChild(script);
   }
+
+  function showSignInModal() {
+    if (signedInUser) return;
+    signInModal.hidden = false;
+  }
+
+  function hideSignInModal() {
+    signInModal.hidden = true;
+  }
+
+  closeSignInModalButton.addEventListener("click", hideSignInModal);
+  signInModal.addEventListener("click", event => {
+    if (event.target === signInModal) hideSignInModal();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") hideSignInModal();
+  });
 
   signOutButton.addEventListener("click", function () {
     idToken = null;
@@ -165,7 +183,8 @@
   window.MediaArchiveAuth = {
     getIdToken: () => idToken,
     getUser: () => signedInUser,
-    isSignedIn: () => Boolean(idToken)
+    isSignedIn: () => Boolean(idToken),
+    showSignIn: showSignInModal
   };
 
   loadGoogleIdentityServices();
