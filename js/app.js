@@ -177,11 +177,10 @@ async function init() {
   loading.style.display = "flex";
   errorMessage.style.display = "none";
 
-  // 首頁只等待 People，避免其他資料表拖住人物列表。
+  // 首頁需要人物、清單及作品關聯資料，全部載入後再整理。
   try {
     people = await callApi("getPeople");
     people = Array.isArray(people) ? people : [];
-    renderPeople(people);
   } catch (error) {
     console.error("人物資料載入失敗：", error);
     errorMessage.textContent = error.message || "人物資料載入失敗，請重新整理頁面。";
@@ -189,8 +188,6 @@ async function init() {
     loading.style.display = "none";
     return;
   }
-
-  loading.style.display = "none";
 
   // 首頁需要清單、作品與人物關聯資料，載入後再整理首頁內容。
   relatedDataPromise = loadRelatedData();
