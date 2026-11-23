@@ -13,6 +13,95 @@ let allPlaylistItems = [];
 let people = [];
 let relatedDataPromise = null;
 let currentCategory = "all";
+let favorites = [];
+let favoritesBusy = new Set();
+
+document.addEventListener("google-auth-state-changed", event => {
+  if (event.detail && event.detail.signedIn) {
+    refreshFavorites();
+  } else {
+    favorites = [];
+    updateFavoriteButtons();
+  }
+});
+
+function favoriteKey(type, id) {
+  return String(id);
+}
+
+function findFavorite(type, id) {
+  return favorites.find(item => String(type === "media" ? item.media_id : item.playlist_id) === String(id));
+}
+
+function createFavoriteButton(type, id) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "favorite-button";
+  button.setAttribute("aria-label", "收藏");
+  button.addEventListener("click", async event => {
+    event.stopPropagation();
+    if (!window.MediaArchiveAuth || !window.MediaArchiveAuth.isSignedIn()) {
+      alert("請先使用 Google 帳戶登入，才能收藏。");
+      return;
+    }
+    const key = type + ":" + String(id);
+    if (favoritesBusy.has(key)) return;
+    favoritesBusy.add(key);
+    button.disabled = true;
+    try {
+      const existing = findFavorite(type, id);
+      if (existing) {
+        await callFavoriteApi("removeFavorite", { favorite_id: existing.favorite_id });
+      } else {
+        const field = type === "media" ? "media_id" : "playlist_id";
+        await callFavoriteApi("addFavorite", { [field]: id });
+      }
+      await refreshFavorites();
+    } catch (error) {
+      console.error("收藏操作失敗：", error);
+      alert(error.message || "收藏操作失敗，請稍後再試。");
+    } finally {
+      favoritesBusy.delete(key);
+      button.disabled = false;
+      updateFavoriteButtons();
+    }
+  });
+  button.dataset.favoriteType = type;
+  button.dataset.favoriteId = String(id);
+  updateFavoriteButton(button);
+  return button;
+}
+
+function updateFavoriteButton(button) {
+  const type = button.dataset.favoriteType;
+  const id = button.dataset.favoriteId;
+  const active = Boolean(findFavorite(type, id));
+  button.textContent = active ? "★" : "☆";
+  button.classList.toggle("is-favorite", active);
+  button.setAttribute("aria-label", active ? "取消收藏" : "加入收藏");
+  button.title = active ? "取消收藏" : "加入收藏";
+}
+
+function updateFavoriteButtons() {
+  document.querySelectorAll(".favorite-button").forEach(updateFavoriteButton);
+}
+
+async function refreshFavorites() {
+  if (!window.MediaArchiveAuth || !window.MediaArchiveAuth.isSignedIn()) {
+    favorites = [];
+    updateFavoriteButtons();
+    return;
+  }
+  try {
+    const data = await callFavoriteApi("getFavorites");
+    favorites = Array.isArray(data) ? data : [];
+    updateFavoriteButtons();
+  } catch (error) {
+    console.error("讀取收藏清單失敗：", error);
+    alert(error.message || "讀取收藏清單失敗。");
+  }
+}
+
 const personCategoryNav = document.getElementById("personCategoryNav");
 
 document.addEventListener("DOMContentLoaded", init);
@@ -212,12 +301,18 @@ function renderPlaylists(playlists, personMedia) {
   playlists.forEach(playlist => {
     const card = document.createElement("div");
     card.className = "playlist-card";
+    const heading = document.createElement("div");
+    heading.className = "playlist-heading";
+    const headingContent = document.createElement("div");
+    headingContent.className = "playlist-heading-content";
     const title = document.createElement("div");
     title.className = "playlist-title";
     title.textContent = playlist.playlist_name || "未命名專輯／播放清單";
     const meta = document.createElement("span");
     meta.className = "playlist-meta";
     meta.textContent = [playlist.playlist_type, playlist.release_date].filter(Boolean).join("・");
+    headingContent.append(title, meta);
+    heading.append(headingContent, createFavoriteButton("playlist", playlist.playlist_id));
     const tracks = document.createElement("div");
     tracks.className = "playlist-tracks";
     tracks.hidden = true;
@@ -235,13 +330,16 @@ function renderPlaylists(playlists, personMedia) {
         if (!media) return;
         const track = document.createElement("div");
         track.className = "playlist-track";
-        track.textContent = (item.item_number ? item.item_number + ". " : "") + (media.title || "未命名作品");
+        const trackTitle = document.createElement("span");
+        trackTitle.className = "playlist-track-title";
+        trackTitle.textContent = (item.item_number ? item.item_number + ". " : "") + (media.title || "未命名作品");
+        track.append(trackTitle, createFavoriteButton("media", media.media_id));
         track.addEventListener("click", event => { event.stopPropagation(); openMedia(media); });
         tracks.appendChild(track);
       });
       if (!tracks.childElementCount) tracks.textContent = "目前沒有可顯示的曲目。";
     });
-    card.append(title, meta, tracks);
+    card.append(heading, tracks);
     personWorks.appendChild(card);
   });
 }
@@ -257,11 +355,16 @@ function renderPersonWorks(items) {
   items.forEach(media => {
     const work = document.createElement("div");
     work.className = "work";
-    work.textContent = media.title || "未命名作品";
+    const content = document.createElement("div");
+    content.className = "work-content";
+    const title = document.createElement("div");
+    title.className = "work-title";
+    title.textContent = media.title || "未命名作品";
     const meta = document.createElement("span");
     meta.className = "work-meta";
     meta.textContent = [media.media_type, media.personRole].filter(Boolean).join("・");
-    work.appendChild(meta);
+    content.append(title, meta);
+    work.append(content, createFavoriteButton("media", media.media_id));
     work.addEventListener("click", () => openMedia(media));
     personWorks.appendChild(work);
   });
