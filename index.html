@@ -16,12 +16,6 @@
     <button id="backButton" type="button">← 返回</button>
     <h1 id="pageTitle">人物</h1>
     <button id="favoritesPageButton" class="favorite-button is-favorite" type="button" aria-label="查看收藏" title="查看收藏">★</button>
-    <div id="accountArea" hidden>
-      <div id="signedInArea" hidden>
-        <span id="accountName"></span>
-        <button id="signOutButton" type="button">登出</button>
-      </div>
-    </div>
   </div>
 
   <div id="signInModal" class="sign-in-modal" hidden>
@@ -36,6 +30,10 @@
   <div id="peopleList"></div>
 
   <div id="personDetail" style="display:none;">
+    <div id="favoritesAccountArea" hidden>
+      <span id="accountName"></span>
+      <button id="signOutButton" type="button">登出</button>
+    </div>
     <div id="personCategoryNav" class="category-nav"></div>
     <div id="personWorks"></div>
   </div>
