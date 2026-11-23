@@ -52,6 +52,30 @@ async function loadRelatedData() {
   }));
 }
 
+function getPersonImagePath(imageURL) {
+  const fallbackImage = "./images/暫無圖片.jpg";
+  const imageValue = String(imageURL || "").trim();
+
+  if (!imageValue) return fallbackImage;
+
+  try {
+    const imagePath = /^https?:\/\//i.test(imageValue)
+      ? new URL(imageValue).pathname
+      : imageValue.split(/[?#]/, 1)[0];
+
+    const fileName = decodeURIComponent(
+      imagePath.split("/").pop().trim()
+    );
+
+    return fileName
+      ? "./images/" + encodeURIComponent(fileName)
+      : fallbackImage;
+  } catch (error) {
+    console.error("人物圖片網址格式錯誤：", imageURL, error);
+    return fallbackImage;
+  }
+}
+
 function renderPeople(items) {
   peopleList.innerHTML = "";
 
@@ -67,12 +91,12 @@ function renderPeople(items) {
     let image;
     if (person.image_url) {
       image = document.createElement("img");
-      image.src = person.image_url;
+      image.src = getPersonImagePath(person.image_url);
       image.alt = person.person_name || "人物圖片";
       image.loading = "lazy";
       image.onerror = function() {
         this.onerror = null;
-        this.replaceWith(createPlaceholder(person.person_name));
+        this.src = "./images/暫無圖片.jpg";
       };
     } else {
       image = createPlaceholder(person.person_name);
