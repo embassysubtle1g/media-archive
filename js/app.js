@@ -359,8 +359,13 @@ async function showPerson(person) {
   const categories = [
     { id: "favorites", label: "已收藏", count: favoriteCount },
     { id: "all", label: "全部作品", count: relatedMedia.length },
-    { id: "albums", label: "專輯", count: relatedPlaylists.filter(isAlbum).length }
-  ];
+    { id: "albums", label: "專輯", count: relatedPlaylists.filter(isAlbum).length },
+    { id: "playlists", label: "播放清單", count: relatedPlaylists.filter(isPlaylist).length },
+    { id: "music", label: "歌曲／MV", count: relatedMedia.filter(isMusic).length },
+    { id: "video", label: "影視作品", count: relatedMedia.filter(isVideo).length }
+  ].filter(category =>
+    ["favorites", "all"].includes(category.id) || category.count > 0
+  );
 
   peopleList.style.display = "none";
   personDetail.style.display = "block";
@@ -411,11 +416,17 @@ function renderPersonCategoryContent(media, playlists) {
     renderFavoriteCollection(media, playlists);
     return;
   }
-  if (currentCategory === "albums") {
-    renderPlaylists(playlists.filter(isAlbum), media);
+  if (currentCategory === "albums" || currentCategory === "playlists") {
+    renderPlaylists(
+      playlists.filter(currentCategory === "albums" ? isAlbum : isPlaylist),
+      media
+    );
     return;
   }
-  renderPersonWorks(media);
+  let selected = media;
+  if (currentCategory === "music") selected = media.filter(isMusic);
+  if (currentCategory === "video") selected = media.filter(isVideo);
+  renderPersonWorks(selected);
 }
 
 function renderFavoriteCollection(media, playlists) {
