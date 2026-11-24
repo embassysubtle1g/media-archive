@@ -1,10 +1,12 @@
-// Google 登入：前端只負責取得 Google ID Token。
-// 真正的身分驗證與收藏權限，仍必須由 Apps Script 伺服器端執行。
+// Google 登入只負責初次確認身分；日常登入狀態由 Media Archive Session 維持。
 (function () {
   let idToken = null;
+  let sessionToken = null;
   let signedInUser = null;
-  const SESSION_TOKEN_KEY = "mediaArchiveGoogleIdToken";
-  let restoredSession = false;
+  let restoringSession = false;
+
+  const SESSION_TOKEN_KEY = "mediaArchiveSessionToken";
+  const SESSION_USER_KEY = "mediaArchiveSessionUser";
 
   const signInContainer = document.getElementById("googleSignInButton");
   const signInModal = document.getElementById("signInModal");
@@ -28,9 +30,9 @@
   function updateAccountUI() {
     if (signedInUser) {
       signInModal.hidden = true;
-      accountName.textContent = signedInUser.name || signedInUser.email || "已登入";
+      accountName.textContent =
+        signedInUser.name || signedInUser.email || "已登入";
     } else {
-
       accountName.textContent = "";
     }
 
@@ -39,7 +41,38 @@
     }));
   }
 
-  window.handleGoogleCredential = function (response) {
+  function saveSession(token, user) {
+    sessionToken = token;
+    signedInUser = user;
+
+    try {
+      localStorage.setItem(SESSION_TOKEN_KEY, token);
+      localStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
+    } catch (error) {
+      sessionToken = null;
+      signedInUser = null;
+      throw new Error("瀏覽器無法保存登入狀態，請檢查儲存空間或瀏覽器設定。");
+    }
+
+    updateAccountUI();
+  }
+
+  function clearLocalSession(shouldNotify = true) {
+    sessionToken = null;
+    signedInUser = null;
+    idToken = null;
+
+    try {
+      localStorage.removeItem(SESSION_TOKEN_KEY);
+      localStorage.removeItem(SESSION_USER_KEY);
+    } catch (error) {
+      console.warn("無法清除本機登入狀態：", error);
+    }
+
+    if (shouldNotify) updateAccountUI();
+  }
+
+  window.handleGoogleCredential = async function (response) {
     if (!response || !response.credential) {
       alert("Google 登入失敗，請再試一次。");
       return;
@@ -48,28 +81,75 @@
     idToken = response.credential;
     const payload = decodeJwtPayload(idToken);
 
-    if (!payload || !payload.exp || Number(payload.exp) <= Math.floor(Date.now() / 1000)) {
+    if (!payload || !payload.exp ||
+        Number(payload.exp) <= Math.floor(Date.now() / 1000)) {
       idToken = null;
       alert("Google 登入憑證無效或已過期，請重新登入。");
       return;
     }
 
-    // 僅保存在目前分頁的工作階段；關閉分頁後會清除。
-    try {
-      sessionStorage.setItem(SESSION_TOKEN_KEY, idToken);
-    } catch (error) {
-      console.warn("無法保存本分頁登入狀態：", error);
-    }
-
-    // 這裡的資料只用來顯示帳號；不可拿來作為收藏 API 的授權依據。
-    signedInUser = {
+    const user = {
       name: payload.name || "",
       email: payload.email || "",
       picture: payload.picture || ""
     };
 
-    updateAccountUI();
+    try {
+      // 只有這一步使用 Google ID Token，後續操作都改用 Session Token。
+      const session = await callSessionApi("createSession", {
+        id_token: idToken
+      });
+
+      if (!session || !session.session_token) {
+        throw new Error("伺服器未能建立登入 Session，請再試一次。");
+      }
+
+      idToken = null;
+      saveSession(session.session_token, user);
+
+    } catch (error) {
+      idToken = null;
+      console.error("建立登入 Session 失敗：", error);
+      alert(error.message || "登入失敗，請稍後再試。");
+    }
   };
+
+  async function restoreSession() {
+    if (restoringSession) return;
+    restoringSession = true;
+
+    let savedToken = "";
+    let savedUser = null;
+
+    try {
+      savedToken = localStorage.getItem(SESSION_TOKEN_KEY) || "";
+      const userText = localStorage.getItem(SESSION_USER_KEY);
+      savedUser = userText ? JSON.parse(userText) : null;
+    } catch (error) {
+      console.warn("讀取已保存的登入狀態失敗：", error);
+    }
+
+    if (!savedToken || !savedUser) {
+      clearLocalSession(false);
+      restoringSession = false;
+      updateAccountUI();
+      return;
+    }
+
+    // 先暫存憑證，再向伺服器確認 Session 仍有效。
+    sessionToken = savedToken;
+
+    try {
+      await callFavoriteApi("getFavorites");
+      signedInUser = savedUser;
+      updateAccountUI();
+    } catch (error) {
+      console.warn("已保存的 Session 無法使用，清除登入狀態：", error);
+      clearLocalSession();
+    } finally {
+      restoringSession = false;
+    }
+  }
 
   function initializeGoogleSignIn() {
     const clientId = window.APP_CONFIG && window.APP_CONFIG.GOOGLE_CLIENT_ID;
@@ -98,8 +178,6 @@
       shape: "pill",
       locale: "zh-TW"
     });
-
-
   }
 
   function loadGoogleIdentityServices() {
@@ -131,56 +209,46 @@
     if (event.key === "Escape") hideSignInModal();
   });
 
-  signOutButton.addEventListener("click", function () {
-    idToken = null;
-    signedInUser = null;
-    restoredSession = false;
-    try {
-      sessionStorage.removeItem(SESSION_TOKEN_KEY);
-    } catch (error) {
-      console.warn("無法清除本分頁登入狀態：", error);
-    }
+  signOutButton.addEventListener("click", async function () {
+    const tokenToRevoke = sessionToken;
+
+    // 先立即清除本機狀態，避免登出期間仍能操作收藏。
+    clearLocalSession();
 
     if (window.google && google.accounts && google.accounts.id) {
       google.accounts.id.disableAutoSelect();
     }
 
-    updateAccountUI();
-  });
-
-  // 嘗試恢復目前分頁的登入狀態。Token 有效期限由 Google 的 exp 欄位判斷，
-  // 真正的 Token 驗證仍由 Apps Script 伺服器端負責。
-  try {
-    const savedToken = sessionStorage.getItem(SESSION_TOKEN_KEY);
-    if (savedToken) {
-      const payload = decodeJwtPayload(savedToken);
-      if (payload && Number(payload.exp) > Math.floor(Date.now() / 1000)) {
-        idToken = savedToken;
-        signedInUser = {
-          name: payload.name || "",
-          email: payload.email || "",
-          picture: payload.picture || ""
-        };
-        restoredSession = true;
-      } else {
-        sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    if (tokenToRevoke) {
+      try {
+        await callSessionApi("logout", {
+          session_token: tokenToRevoke
+        });
+      } catch (error) {
+        // 即使網路暫時失敗，本機仍會登出；伺服器端 Session 最晚在期限後失效。
+        console.warn("伺服器撤銷 Session 失敗：", error);
       }
     }
-  } catch (error) {
-    console.warn("無法恢復本分頁登入狀態：", error);
-  }
+  });
 
-  // defer 載入的 app.js 會先註冊事件監聽，再於 DOMContentLoaded 時收到恢復結果。
-  if (restoredSession) {
-    document.addEventListener("DOMContentLoaded", updateAccountUI, { once: true });
-  }
+  // 同一瀏覽器的其他分頁登出時，同步清除本分頁狀態。
+  window.addEventListener("storage", event => {
+    if (event.key === SESSION_TOKEN_KEY && !event.newValue) {
+      sessionToken = null;
+      signedInUser = null;
+      idToken = null;
+      updateAccountUI();
+    }
+  });
 
   window.MediaArchiveAuth = {
-    getIdToken: () => idToken,
+    getSessionToken: () => sessionToken,
     getUser: () => signedInUser,
-    isSignedIn: () => Boolean(idToken),
+    isSignedIn: () => Boolean(sessionToken && signedInUser),
     showSignIn: showSignInModal
   };
 
+  // 先註冊 API，再開始恢復；恢復完成後才通知 app.js。
+  restoreSession();
   loadGoogleIdentityServices();
 })();
