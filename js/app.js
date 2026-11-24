@@ -496,7 +496,7 @@ function translateMediaType(value) {
   return translateDisplayValue(value, {
     "song": "歌曲",
     "music": "音樂",
-    "music video": "音樂錄影帶",
+    "music video": "音樂影片",
     "mv": "音樂錄影帶",
     "video": "影片",
     "movie": "電影",
