@@ -226,15 +226,17 @@ h1 {
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  overflow-x: scroll;
+  overflow-x: auto;
   overflow-y: hidden;
   padding: 1vw 0 4vw;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
   overscroll-behavior-x: contain;
   cursor: grab;
 }
+.category-nav::-webkit-scrollbar { display: none; }
 .category-nav:active { cursor: grabbing; }
  .category-button {
   flex: 0 0 auto;
