@@ -85,6 +85,8 @@ function createFavoriteButton(type, id) {
       });
     }
     updateFavoriteButtons();
+    // 在收藏頁取消收藏時，立即從清單移除，不必等待伺服器回應。
+    renderCurrentFavoriteView();
 
     try {
       if (existing) {
